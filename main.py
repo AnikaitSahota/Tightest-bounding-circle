@@ -19,8 +19,9 @@ class bounding_circle() :
 		"""
 		stack = [(i,j)]                                             # stack for DFS traversal
 		box_coor = [[img.shape[0] * img.shape[1] + 2 , img.shape[0] * img.shape[1] + 2] , [-1 , -1]]
+		border_pt = set()
 
-		possible_dir = [(-1,0) , (1,0) , (0,1) , (0,-1)]            # possible direction are the
+		possible_dir = [(1,0) , (-1,0) , (0,1) , (0,-1)]            # possible direction are the
 
 		while(len(stack) > 0) :
 			u = stack.pop()
@@ -31,13 +32,18 @@ class bounding_circle() :
 			box_coor[1][0] = max(box_coor[1][0] , u[0])
 			box_coor[1][1] = max(box_coor[1][1] , u[1])
 
+			border_flag = 0
 			for directions in possible_dir :                        # iterating in the possible directions
 				if(self.img.shape[0] > u[0] + directions[0] >= 0 and self.img.shape[1] > u[1] + directions[1] >= 0 and self.img[u[0] + directions[0]][u[1] + directions[1]] == 1) :
 					# if the index is valid and the pixel at that index is white
 					# the we need to darken it
 					stack.append((u[0] + directions[0],u[1] + directions[1]))
+					border_flag += self.img[u[0] + directions[0]][u[1] + directions[1]]		# number of white neigbhours
 
-		return box_coor
+			if(border_flag == 1) :
+				border_pt.add(u)
+
+		return box_coor, border_pt
 
 	def number_of_objects(self) -> int :
 		"""function to find number of white objects in the black background image
@@ -74,22 +80,40 @@ class bounding_circle() :
 			for j in range(self.img.shape[1]) :
 				if(self.img[i][j] == 1) :                				# white pixel of a object is found
 					objects_counter += 1							# one more object is found
-					box_coor = self.__hide_object(i , j)						# need to hide all other white pixels of this object
+					box_coor , _ = self.__hide_object(i , j)						# need to hide all other white pixels of this object
 					obj_box_coor.append(box_coor)
 		
 		return objects_counter , obj_box_coor
 
+	# def get_tightest_circle(self , border_pt) :
+	# 	for i in range()
 
-if __name__ == '__main__' :
-	img = plt.imread('Project1.png')
+	def get_circle(self) :
+		objects_counter = 0											# starting object counter
+		border_pt_wrt_obj = []
 
-	# bc = bounding_circle(img)
-	# a = bc.number_of_objects()
-	# n , l = bc.get_box()
-	# print(n)
+		for i in range(self.img.shape[0]) :
+			for j in range(self.img.shape[1]) :
+				if(self.img[i][j] == 1) :                				# white pixel of a object is found
+					objects_counter += 1							# one more object is found
+					_ , border_pt = self.__hide_object(i , j)						# need to hide all other white pixels of this object
+					# print(border_pt)
+					border_pt_wrt_obj.append(border_pt)
+
+		for border_pt in border_pt_wrt_obj :
+			for u in border_pt :
+				self.img[u[0]][u[1]] = 1
+		plt.imshow(self.img , cmap='gray')
+		return objects_counter
+
+
+def non_tightest(img) :
+	bc = bounding_circle(img)
+	n , l = bc.get_box()
+	print(n)
 	# print(l)
 
-	l = [[[14, 740], [121, 834]], [[18, 62], [192, 244]], [[30, 378], [188, 555]], [[239, 58], [409, 209]], [[266, 388], [420, 567]], [[282, 653], [388, 933]], [[440, 401], [629, 535]], [[453, 40], [606, 264]], [[495, 674], [612, 914]]]
+	# l = [[[14, 740], [121, 834]], [[18, 62], [192, 244]], [[30, 378], [188, 555]], [[239, 58], [409, 209]], [[266, 388], [420, 567]], [[282, 653], [388, 933]], [[440, 401], [629, 535]], [[453, 40], [606, 264]], [[495, 674], [612, 914]]]
 	
 
 	fig , ax = plt.subplots()
@@ -104,3 +128,21 @@ if __name__ == '__main__' :
 		ax.add_patch(circle)
 
 	plt.show()
+
+
+if __name__ == '__main__' :
+	img = plt.imread('Project1.png')
+	img = img[:233 , :373]
+	# img = plt.imread('tmp.png' )
+	# img = plt.imread('tmp_2.png' )
+	print(img.shape)
+
+	bc = bounding_circle(img)
+	a = bc.get_circle()
+	# n , l = bc.get_box()
+	print(a)
+	fig = plt.figure()
+	plt.imshow(img , cmap='gray')
+	plt.show()
+
+	# non_tightest(img)
