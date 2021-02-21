@@ -193,10 +193,15 @@ def jaccard_similarity(img1 , img2) :
 	float
 		jaccard score between two images
 	"""
-	tmp = img1 + img2
-	common_count = (tmp != 1).sum()																	# number of common pixels
+	# if black pixels outside circle are included
+	# tmp = img1 + img2
+	# common_count = (tmp != 1).sum()																	# number of common pixels
+	# return common_count / (tmp.shape[0] * tmp.shape[1])												# jaccard score
 	
-	return common_count / (tmp.shape[0] * tmp.shape[1])												# jaccard score
+	tmp = (img1 + img2) * img2																		# mutlitipication by mask, makes it sure that pixel inside mask are used, only
+	common_count = (tmp > 1).sum()																	# number of common pixels
+	return common_count / img2.sum()																# jaccard score
+
 
 def create_mask(circle_args, img) :
 	"""function to creat a mask over provided image based on the provided arguments of circle
@@ -239,7 +244,7 @@ if __name__ == '__main__' :
 	objects.append(img[423: , 287:650])
 	objects.append(img[428: , 630:])
 
-	# objects = [img]																				# comment-out to compute over whole image
+	objects = [img]																				# comment-out to compute over whole image
 
 	for i in range(len(objects)) :																	# traversing over the objects
 		circle_args = tightest_circle(objects[i])													# circle's arguments in patch according to objects
@@ -250,4 +255,4 @@ if __name__ == '__main__' :
 		plt.show()
 
 		score = jaccard_similarity(objects[i] , mask)												# jacard score for the patch and image
-		print('Jaccard score of object', i , 'is' , score)
+		print('Jaccard score of object', i+1 , 'is' , score)
