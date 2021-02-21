@@ -145,7 +145,7 @@ def tightest(img) :
 	plt.show()
 	return circle_arg
 
-def jacard_similarity(img1 , img2) :
+def jacard_similarity(img1 , img2 = None) :
 	if(img2 == None) :
 		circle_arg_obj = tightest(img1)
 	else :
