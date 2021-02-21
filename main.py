@@ -2,6 +2,7 @@ from PIL.Image import NONE
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import smallestenclosingcircle
+import numpy as np
 
 
 class bounding_circle() :
@@ -118,11 +119,11 @@ def non_tightest(img) :
 	fig , ax = plt.subplots()
 	plt.imshow(img , cmap = 'gray')
 	for box_coor in l :
-		rect = patches.Rectangle((box_coor[0][1],box_coor[0][0]),box_coor[1][1]-box_coor[0][1],box_coor[1][0]-box_coor[0][0],linewidth=2,edgecolor='b',facecolor='none')
+		rect = patches.Rectangle((box_coor[0][1],box_coor[0][0]),box_coor[1][1]-box_coor[0][1],box_coor[1][0]-box_coor[0][0],linewidth = 2,edgecolor='b',facecolor='none')
 		x = box_coor[0][0] + box_coor[1][0] ; x /= 2 ;
 		y = box_coor[0][1] + box_coor[1][1] ; y /= 2 ;
 		r = ((box_coor[0][0] - x) ** 2 + (box_coor[0][1] - y) ** 2 ) ** 0.5
-		circle = patches.Circle((y,x), r, linewidth = 1, edgecolor = 'r' , facecolor = 'none')
+		circle = patches.Circle((y,x), r, linewidth = 2, edgecolor = 'r' , facecolor = 'none')
 		ax.add_patch(rect)																			# Adding the rectangular patch to the Axes
 		ax.add_patch(circle)
 
@@ -138,32 +139,29 @@ def tightest(img) :
 	for b_pt in b_pt_obj :
 		actual = smallestenclosingcircle.make_circle(b_pt)
 		circle_arg.append(actual)
-		# circle = patches.Circle((actual[1],actual[0]), actual[2], linewidth = 1, edgecolor = 'r' , facecolor = 'none')
-		# ax.add_patch(circle)
-		ax.add_artist(plt.Circle((actual[1], actual[0]), actual[2] , edgecolor = 'r' , fill = False))
+		circle = patches.Circle((actual[1],actual[0]), actual[2], linewidth = 2, edgecolor = 'r' , facecolor = 'none')
+		ax.add_patch(circle)
+		# ax.add_artist(plt.Circle((actual[1], actual[0]), actual[2] , edgecolor = 'r' , fill = False))
 
 	plt.show()
 	return circle_arg
 
-def jacard_similarity(img1 , img2 = None) :
-	if(img2 == None) :
-		circle_arg_obj = tightest(img1)
-	else :
-		circle_arg_obj = tightest(img2)
-
-	common_count = 0
-
-	for i in range (img1.shape[0]) :
-		for j in range (img1.shape[1]) :
-			in_circle = False
-			for circle_arg in circle_arg_obj :
-				if(((circle_arg[0] - i)**2 + (circle_arg[1] - j)**2) ** 0.5 <= circle_arg[2]) :
-					in_circle = True
-					break
-			if((in_circle and img1[i][j] == 1) or (in_circle == False and img1[i][j] == 0)) :
-				common_count += 1
+def jacard_similarity(img1 , img2) :
+	tmp = img1 + img2
+	common_count = (tmp != 1).sum()
 	
-	return common_count / (img1.shape[0] * img1.shape[1])
+	return common_count / (tmp.shape[0] * tmp.shape[1])
+
+def create_mask(circle_args, img) :
+	for i in range(img.shape[0]) :
+		for j in range(img.shape[1]) :
+			for circle_arg in circle_args :
+				if(((circle_arg[0] - i) ** 2 + (circle_arg[1] - j) ** 2 ) ** 0.5 <= circle_arg[2]) :
+					img[i][j] = 1
+					break
+
+	return img
+
 
 if __name__ == '__main__' :
 	img = plt.imread('Project1.png')
@@ -178,9 +176,19 @@ if __name__ == '__main__' :
 	objects.append(img[423: , 287:650])
 	objects.append(img[428: , 630:])
 
-	for obj in objects :
-		score = jacard_similarity(obj)
-		print(score)
+	# objects = [img]
+
+	for i in range(len(objects)) :
+		circle_args = tightest(objects[i])
+		mask = create_mask(circle_args , np.zeros(objects[i].shape, dtype = np.int))
+
+		fig = plt.figure()
+		plt.imshow(mask, cmap='gray')
+		plt.show()
+
+		score = jacard_similarity(objects[i] , mask)
+		print('Jacard score of object', i , 'is' , score)
+
 
 
 	# coor = tightest(obj6)
